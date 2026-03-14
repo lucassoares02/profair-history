@@ -1,17 +1,13 @@
 FROM node:20-alpine
 
-# Uncomment if use of `process.dlopen` is necessary
-# RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-ENV PORT 3001
-EXPOSE 3001
+COPY package*.json ./
 
-ARG NODE_ENV=production
-ENV NODE_ENV $NODE_ENV
+RUN npm install
 
-WORKDIR /usr/src/app
-COPY package.json ./
-RUN yarn install
 COPY . .
 
-CMD [ "yarn", "start" ]
+EXPOSE 3000
+
+CMD ["npm","start"]
