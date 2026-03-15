@@ -7,13 +7,127 @@ const History = {
 
     const { id } = req.params;
 
-    const query = "select * from history where id_user = ? order by date desc";
+    const query = "select * from associado";
 
     connection.query(query, [id], (error, results, fields) => {
       if (error) {
         console.log("Error Select History: ", error);
       } else {
         return res.json(results);
+      }
+    });
+    // connection.end();
+  },
+
+  // LISTA DE EVENTOS E VALORES DO ASSOCIADO NO FORNECEDOR
+  async findValueEventsByAssociadoFornecedor(req, res) {
+    logger.info("Get History to Client");
+
+    const { associado, fornecedor } = req.params;
+
+    const query = `select sum(p.quantMercPedido * m.precoMercadoria) as total, e.descricao from pedido p
+    join mercadoria m on p.codMercPedido = m.codMercadoria
+    join associado a on a.codAssociado = p.codAssocPedido
+    join fornecedor f on p.codFornPedido = f.codForn
+    join events e on e.id = p.event
+    where p.codFornPedido = ? and p.codAssocPedido = ?
+    group by p.event;`;
+
+    connection.query(query, [fornecedor, associado], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select History: ", error);
+      } else {
+        return res.json(results);
+      }
+    });
+    // connection.end();
+  },
+
+  // LISTA DE PEDIDOS DO ASSOCIADO NO FORNECEDOR
+  async findRequestsByEventsByAssociadoFornecedor(req, res) {
+    logger.info("Get Requests by Client");
+
+    const { associado, fornecedor, evento } = req.params;
+
+    const query = `SET sql_mode = ''; select pedido.codPedido , 
+    associado.cnpjAssociado , 
+    associado.codAssociado  as codConsultRelaciona,
+    consultor.nomeConsult, 
+    associado.razaoAssociado, 
+    fornecedor.nomeForn,
+    fornecedor.codForn,
+    negociacao.codNegociacao,
+    negociacao.prazo,
+    events.descricao as 'event',
+    negociacao.descNegociacao,
+    sum(pedido.quantMercPedido * mercadoria.precoMercadoria) as 'valor', 
+    TIME_FORMAT(SUBTIME(pedido.dataPedido, '03:00:00'),'%H:%i') as 'horas' 
+    from pedido
+    join consultor on consultor.codConsultEvent = pedido.codComprPedido
+    join fornecedor on fornecedor.codForn = pedido.codFornPedido
+    join negociacao on negociacao.codNegociacao = pedido.codNegoPedido
+    join associado on pedido.codAssocPedido = associado.codAssociado 
+    join mercadoria on pedido.codMercPedido = mercadoria.codMercadoria 
+    join events on events.id = pedido.event
+    where pedido.codAssocPedido = ? 
+    and pedido.codFornPedido = ?
+    and events.id = ?
+    and consultor.event = events.id
+    group by pedido.codNegoPedido
+    order by horas 
+    desc;`;
+
+    connection.query(query, [associado, fornecedor, evento], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Request: ", error);
+      } else {
+        return res.json(results[1]);
+      }
+    });
+    // connection.end();
+  },
+
+  // DETALHES DO PEDIDOS DO ASSOCIADO NO FORNECEDOR
+  async findDetailsRequestsByEventsByAssociadoFornecedor(req, res) {
+    logger.info("Get Details Requests by Client");
+
+    const { associado, fornecedor, negociacao } = req.params;
+
+    const query = `SET sql_mode = ''; SELECT
+    mercadoria.codMercadoria,
+    mercadoria.nomeMercadoria,
+    mercadoria.embMercadoria,
+    mercadoria.fatorMerc,
+    mercadoria.complemento,
+    mercadoria.marca,
+    IFNULL(SUM(pedido.quantMercPedido), 0) as 'quantMercadoria',
+    mercadoria.precoMercadoria as precoMercadoria,
+    mercadoria.precoUnit,
+    IFNULL(
+        SUM(
+            mercadoria.precoMercadoria * pedido.quantMercPedido
+        ),
+        0
+    ) as 'valorTotal'
+    FROM
+        mercadoria
+        JOIN pedido ON pedido.codMercPedido = mercadoria.codMercadoria
+    WHERE
+        pedido.codAssocPedido = ?
+        AND pedido.codfornpedido = ?
+        AND pedido.codNegoPedido = ?
+    GROUP BY
+        mercadoria.codMercadoria
+    HAVING
+        valorTotal != 0
+    ORDER BY
+        quantMercPedido;`;
+
+    connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Details Request: ", error);
+      } else {
+        return res.json(results[1]);
       }
     });
     // connection.end();

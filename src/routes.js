@@ -2,6 +2,13 @@ const router = require("express").Router();
 
 const History = require("@controller/History");
 
+router.get("/status", (req, res) => {
+  return res.json({ message: "Running" });
+});
+
 router.get("/history", History.find);
+router.get("/history/events/:fornecedor/:associado", History.findValueEventsByAssociadoFornecedor);
+router.get("/history/requests/:fornecedor/:associado/:evento", History.findRequestsByEventsByAssociadoFornecedor);
+router.get("/history/details/requests/:fornecedor/:associado/:negociacao", History.findDetailsRequestsByEventsByAssociadoFornecedor);
 
 module.exports = router;
