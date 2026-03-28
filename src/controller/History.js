@@ -228,49 +228,50 @@ const History = {
     const { fornecedor, associado } = req.params;
 
     const query = `SET sql_mode = ''; SELECT 
-        a.codAssociadoEvent, 
-        n.codNegociacao,
-        n.descNegociacao,
-        comprador.nomeConsult AS nomeComprador,
-        vendedor.nomeConsult AS nomeVendedor,
-        IFNULL(SUM(p.quantMercPedido), 0) AS volumeTotal,
-        IFNULL(SUM(p.quantMercPedido * m.precoMercadoria), 0) AS valorTotal, 
-        e.id AS idEvento,
-        e.descricao AS descricaoEvento
-    FROM (
-        SELECT codAssociadoEvent, razaoAssociado
-        FROM associado
-        GROUP BY codAssociadoEvent
-    ) a
-    JOIN pedido p ON p.codAssocPedido = a.codAssociadoEvent 
-    JOIN fornecedor f ON f.codFornEvent = p.codFornPedido
-                    AND f.event = p.event
-    JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
-                    AND m.nego = p.codNegoPedido
-    JOIN negociacao n ON n.codNegociacao = p.codNegoPedido
-    JOIN events e ON e.id = p.event
-    LEFT JOIN consultor comprador ON comprador.codConsultEvent = p.codComprPedido
-                                  AND comprador.event = p.event
-    LEFT JOIN consultor vendedor ON vendedor.codConsultEvent = p.codConsultPedido
-                                AND vendedor.event = p.event
-    WHERE 
-        p.codFornPedido = ?
-        AND p.codAssocPedido = ?
-    GROUP BY 
-        a.codAssociadoEvent, 
-        a.razaoAssociado,
-        n.codNegociacao,
-        n.descNegociacao,
-        comprador.nomeConsult,
-        vendedor.nomeConsult,
-        e.id, 
-        e.descricao
-    HAVING 
-        valorTotal != 0
-    ORDER BY 
-        e.id, 
-        n.codNegociacao,
-        valorTotal DESC;`;
+    a.codAssociadoEvent, 
+    n.codNegociacao,
+    n.descNegociacao,
+    comprador.nomeConsult AS nomeComprador,
+    vendedor.nomeConsult AS nomeVendedor,
+    p.dataPedido,
+    IFNULL(SUM(p.quantMercPedido), 0) AS volumeTotal,
+    IFNULL(SUM(p.quantMercPedido * m.precoMercadoria), 0) AS valorTotal, 
+    e.id AS idEvento,
+    e.descricao AS descricaoEvento
+FROM (
+    SELECT codAssociadoEvent, razaoAssociado
+    FROM associado
+    GROUP BY codAssociadoEvent
+) a
+JOIN pedido p ON p.codAssocPedido = a.codAssociadoEvent 
+JOIN fornecedor f ON f.codFornEvent = p.codFornPedido
+                 AND f.event = p.event
+JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
+                 AND m.nego = p.codNegoPedido
+JOIN negociacao n ON n.codNegociacao = p.codNegoPedido
+JOIN events e ON e.id = p.event
+LEFT JOIN consultor comprador ON comprador.codConsultEvent = p.codComprPedido
+                              AND comprador.event = p.event
+LEFT JOIN consultor vendedor ON vendedor.codConsultEvent = p.codConsultPedido
+                             AND vendedor.event = p.event
+WHERE 
+    p.codFornPedido = ?
+    AND p.codAssocPedido = ?
+GROUP BY 
+    a.codAssociadoEvent, 
+    a.razaoAssociado,
+    n.codNegociacao,
+    n.descNegociacao,
+    comprador.nomeConsult,
+    vendedor.nomeConsult,
+    p.dataPedido,
+    e.id, 
+    e.descricao
+HAVING 
+    valorTotal != 0
+ORDER BY 
+    e.id, 
+    valorTotal DESC;`;
 
     connection.query(query, [fornecedor, associado], (error, results, fields) => {
       if (error) {
