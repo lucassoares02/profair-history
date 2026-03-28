@@ -132,6 +132,50 @@ const History = {
     });
     // connection.end();
   },
+
+  // DETALHES DO PEDIDOS DO ASSOCIADO NO FORNECEDOR
+  async findListClientByProvider(req, res) {
+    logger.info("Get Details Requests by Client");
+
+    const { fornecedor } = req.params;
+
+    const query = `SET sql_mode = ''; SELECT
+          a.codAssociadoEvent,
+          a.razaoAssociado,
+          IFNULL(
+              SUM(mercadoria.precoMercadoria * pedido.quantMercPedido),
+              0
+          ) AS valorTotal
+      FROM
+          (
+              SELECT codAssociadoEvent, razaoAssociado
+              FROM associado
+              GROUP BY codAssociadoEvent
+          ) a
+          JOIN pedido ON pedido.codAssocPedido = a.codAssociadoEvent
+          JOIN mercadoria ON mercadoria.codMercadoria = pedido.codMercPedido
+                        AND mercadoria.nego = pedido.codNegoPedido
+          JOIN fornecedor f ON f.codFornEvent = pedido.codFornPedido
+      WHERE
+          pedido.codFornPedido = ${fornecedor}
+          AND pedido.event = f.event
+      GROUP BY
+          a.codAssociadoEvent,
+          a.razaoAssociado
+      HAVING
+          valorTotal != 0
+      ORDER BY
+          valorTotal DESC;`;
+
+    connection.query(query, [fornecedor], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Details Request: ", error);
+      } else {
+        return res.json(results[1]);
+      }
+    });
+    // connection.end();
+  },
 };
 
 module.exports = History;

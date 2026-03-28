@@ -10,5 +10,6 @@ router.get("/history", History.find);
 router.get("/history/events/:fornecedor/:associado", History.findValueEventsByAssociadoFornecedor);
 router.get("/history/requests/:fornecedor/:associado/:evento", History.findRequestsByEventsByAssociadoFornecedor);
 router.get("/history/details/requests/:fornecedor/:associado/:negociacao", History.findDetailsRequestsByEventsByAssociadoFornecedor);
+router.get("/history/list/client/:fornecedor", History.findListClientByProvider);
 
 module.exports = router;
