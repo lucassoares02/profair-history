@@ -187,6 +187,7 @@ const History = {
         a.codAssociadoEvent, 
         n.codNegociacao,
         n.descNegociacao,
+        IFNULL(SUM(p.quantMercPedido), 0) AS volumeTotal,
         IFNULL(SUM(p.quantMercPedido * m.precoMercadoria), 0) AS valorTotal, 
         e.id AS idEvento,
         e.descricao AS descricaoEvento
