@@ -177,6 +177,57 @@ const History = {
     });
     // connection.end();
   },
+
+  async findDetailsClientByProvider(req, res) {
+    logger.info("Get Details Requests by Client");
+
+    const { fornecedor, associado } = req.params;
+
+    const query = `SET sql_mode = ''; SELECT 
+        a.codAssociadoEvent, 
+        n.codNegociacao,
+        n.descNegociacao,
+        IFNULL(SUM(p.quantMercPedido * m.precoMercadoria), 0) AS valorTotal, 
+        e.id AS idEvento,
+        e.descricao AS descricaoEvento
+    FROM (
+        SELECT codAssociadoEvent, razaoAssociado
+        FROM associado
+        GROUP BY codAssociadoEvent
+    ) a
+    JOIN pedido p ON p.codAssocPedido = a.codAssociadoEvent 
+    JOIN fornecedor f ON f.codFornEvent = p.codFornPedido
+                    AND f.event = p.event
+    JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
+                    AND m.nego = p.codNegoPedido
+    JOIN negociacao n ON n.codNegociacao = p.codNegoPedido 
+    JOIN events e ON e.id = p.event 
+    WHERE 
+        p.codFornPedido = ? 
+        AND p.codAssocPedido = ?
+    GROUP BY 
+        a.codAssociadoEvent, 
+        a.razaoAssociado,
+        n.codNegociacao,
+        n.descNegociacao,
+        e.id, 
+        e.descricao
+    HAVING 
+        valorTotal != 0
+    ORDER BY 
+        e.id, 
+        n.codNegociacao,
+        valorTotal DESC;`;
+
+    connection.query(query, [fornecedor, associado], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Details Request: ", error);
+      } else {
+        return res.json(results[1]);
+      }
+    });
+    // connection.end();
+  },
 };
 
 module.exports = History;
