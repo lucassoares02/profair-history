@@ -25,13 +25,25 @@ const History = {
 
     const { associado, fornecedor } = req.params;
 
-    const query = `select sum(p.quantMercPedido * m.precoMercadoria) as total, e.descricao, e.id from pedido p
-    join mercadoria m on p.codMercPedido = m.codMercadoria
-    join associado a on a.codAssociado = p.codAssocPedido
-    join fornecedor f on p.codFornPedido = f.codForn
-    join events e on e.id = p.event
-    where p.codFornPedido = ? and p.codAssocPedido = ?
-    group by p.event;`;
+    const query = `SELECT
+        IFNULL(CAST(SUM(p.quantMercPedido * m.precoMercadoria) AS DOUBLE), 0) AS total,
+        e.descricao,
+        e.id
+    FROM pedido p
+        JOIN mercadoria m ON p.codMercPedido = m.codMercadoria 
+                        AND m.nego = p.codNegoPedido
+        JOIN associado a ON a.codAssociadoEvent = p.codAssocPedido 
+                        AND a.event = p.event
+        JOIN fornecedor f ON p.codFornPedido = f.codFornEvent 
+                        AND f.event = p.event
+        JOIN events e ON e.id = p.event
+    WHERE 
+        p.codFornPedido = ?
+        AND p.codAssocPedido = ?
+    GROUP BY 
+        p.event, 
+        e.id, 
+        e.descricao;`;
 
     connection.query(query, [fornecedor, associado], (error, results, fields) => {
       if (error) {
