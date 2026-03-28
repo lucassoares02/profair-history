@@ -12,5 +12,6 @@ router.get("/history/requests/:fornecedor/:associado/:evento", History.findReque
 router.get("/history/details/requests/:fornecedor/:associado/:negociacao", History.findDetailsRequestsByEventsByAssociadoFornecedor);
 router.get("/history/list/client/:fornecedor", History.findListClientByProvider);
 router.get("/history/details/client/:fornecedor/:associado", History.findDetailsClientByProvider);
+router.get("/history/details/negotiation/:fornecedor/:associado/:negociacao", History.findDetailsNegotiationClientByProvider);
 
 module.exports = router;

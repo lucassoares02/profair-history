@@ -228,6 +228,47 @@ const History = {
     });
     // connection.end();
   },
+
+  async findDetailsNegotiationClientByProvider(req, res) {
+    logger.info("Get Details Requests by Negotiation");
+
+    const { fornecedor, associado, negociacao } = req.params;
+
+    const query = `SET sql_mode = ''; SELECT 
+      mercadoria.codMercadoria,
+      mercadoria.nomeMercadoria,
+      mercadoria.embMercadoria,
+      mercadoria.fatorMerc,
+      mercadoria.complemento,
+      mercadoria.marca, 
+      IFNULL(SUM(pedido.quantMercPedido), 0) as 'quantMercadoria', 
+      mercadoria.precoMercadoria as precoMercadoria,
+      mercadoria.precoUnit,
+      IFNULL(SUM(mercadoria.precoMercadoria * pedido.quantMercPedido), 0) as 'valorTotal' 
+      FROM 
+          mercadoria 
+      JOIN 
+          pedido ON pedido.codMercPedido = mercadoria.codMercadoria 
+      WHERE 
+          pedido.codAssocPedido = ?
+          AND pedido.codfornpedido = ?
+          AND pedido.codNegoPedido = ?
+      GROUP BY 
+          mercadoria.codMercadoria
+      HAVING 
+          valorTotal != 0
+      ORDER BY 
+          quantMercPedido;`;
+
+    connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Details Request: ", error);
+      } else {
+        return res.json(results[1]);
+      }
+    });
+    // connection.end();
+  },
 };
 
 module.exports = History;
