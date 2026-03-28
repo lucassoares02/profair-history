@@ -25,7 +25,7 @@ const History = {
 
     const { associado, fornecedor } = req.params;
 
-    const query = `select sum(p.quantMercPedido * m.precoMercadoria) as total, e.descricao from pedido p
+    const query = `select sum(p.quantMercPedido * m.precoMercadoria) as total, e.descricao, e.id from pedido p
     join mercadoria m on p.codMercPedido = m.codMercadoria
     join associado a on a.codAssociado = p.codAssocPedido
     join fornecedor f on p.codFornPedido = f.codForn
