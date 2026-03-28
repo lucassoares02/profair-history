@@ -142,6 +142,7 @@ const History = {
     const query = `SET sql_mode = ''; SELECT
           a.codAssociadoEvent,
           a.razaoAssociado,
+          IFNULL(SUM(pedido.quantMercPedido), 0) as volumeTotal,
           IFNULL(
               SUM(mercadoria.precoMercadoria * pedido.quantMercPedido),
               0
