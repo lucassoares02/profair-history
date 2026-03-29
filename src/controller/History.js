@@ -326,6 +326,59 @@ ORDER BY
     // connection.end();
   },
 
+  async findListProviderbyClient(req, res) {
+    logger.info("Get Details Requests by Provider");
+
+    const { associado } = req.params;
+
+    const query = `SET sql_mode = ''; SELECT
+        f.codFornEvent,
+        f.nomeForn,
+        IFNULL(SUM(p.quantMercPedido), 0) AS volumeTotal,
+        IFNULL(SUM(m.precoMercadoria * p.quantMercPedido), 0) AS valorTotal,
+        IFNULL(SUM(
+            CASE 
+                WHEN p.event = 1 THEN m.precoMercadoria * p.quantMercPedido
+                ELSE 0
+            END
+        ), 0) AS valorEvento1,
+
+        IFNULL(SUM(
+            CASE 
+                WHEN p.event = 2 THEN m.precoMercadoria * p.quantMercPedido
+                ELSE 0
+            END
+        ), 0) AS valorEvento2
+
+    FROM fornecedor f
+    JOIN pedido p 
+        ON p.codFornPedido = f.codFornEvent
+        AND p.event = f.event
+
+    JOIN mercadoria m 
+        ON m.codMercadoria = p.codMercPedido
+        AND m.nego = p.codNegoPedido
+    WHERE p.codAssocPedido = ?
+
+    GROUP BY
+        f.codFornEvent,
+        f.nomeForn
+
+    HAVING valorTotal != 0
+
+    ORDER BY
+        valorTotal DESC;`;
+
+    connection.query(query, [associado], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select Details Request: ", error);
+      } else {
+        return res.json(results[1]);
+      }
+    });
+    // connection.end();
+  },
+
   async findListProvider(req, res) {
     logger.info("Get Details Requests by Provider");
 

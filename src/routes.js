@@ -12,6 +12,7 @@ router.get("/history/provider/:fornecedor", History.findValueEventsByFornecedor)
 router.get("/history/requests/:fornecedor/:associado/:evento", History.findRequestsByEventsByAssociadoFornecedor);
 router.get("/history/details/requests/:fornecedor/:associado/:negociacao", History.findDetailsRequestsByEventsByAssociadoFornecedor);
 router.get("/history/list/client/:fornecedor", History.findListClientByProvider);
+router.get("/history-provider/:associado", History.findListProviderbyClient);
 router.get("/history/list/provider", History.findListProvider);
 router.get("/history/details/client/:fornecedor/:associado", History.findDetailsClientByProvider);
 router.get("/history/details/negotiation/:fornecedor/:associado/:negociacao", History.findDetailsNegotiationClientByProvider);
