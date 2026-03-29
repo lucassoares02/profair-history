@@ -61,6 +61,8 @@ const History = {
     logger.info("Get History to Provider");
 
     const { fornecedor } = req.params;
+    // check ignore fornecedor flag
+    const ignoreFlag = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SELECT
         IFNULL(CAST(SUM(p.quantMercPedido * m.precoMercadoria) AS DOUBLE), 0) AS total,
@@ -73,13 +75,13 @@ const History = {
                         AND f.event = p.event
         JOIN events e ON e.id = p.event
     WHERE 
-        p.codFornPedido = ?
+        (? = 1 OR p.codFornPedido = ?)
     GROUP BY 
         p.event, 
         e.id, 
         e.descricao;`;
 
-    connection.query(query, [fornecedor], (error, results, fields) => {
+    connection.query(query, [ignoreFlag, fornecedor], (error, results, fields) => {
       if (error) {
         console.log("Error Select History: ", error);
       } else {
