@@ -8,6 +8,7 @@ router.get("/status", (req, res) => {
 
 router.get("/history", History.find);
 router.get("/history/events/:fornecedor/:associado", History.findValueEventsByAssociadoFornecedor);
+router.get("/history/client/events/:associado", History.findValueEventsByFornecedorAssociado);
 router.get("/history/provider/:fornecedor", History.findValueEventsByFornecedor);
 router.get("/history/requests/:fornecedor/:associado/:evento", History.findRequestsByEventsByAssociadoFornecedor);
 router.get("/history/details/requests/:fornecedor/:associado/:negociacao", History.findDetailsRequestsByEventsByAssociadoFornecedor);

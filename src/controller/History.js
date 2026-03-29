@@ -57,6 +57,39 @@ const History = {
     // connection.end();
   },
 
+  async findValueEventsByFornecedorAssociado(req, res) {
+    logger.info("Get History to Client");
+
+    const { associado } = req.params;
+
+    const query = `SELECT
+        IFNULL(CAST(SUM(p.quantMercPedido * m.precoMercadoria) AS DOUBLE), 0) AS total,
+        e.descricao,
+        e.id
+    FROM pedido p
+        JOIN mercadoria m ON p.codMercPedido = m.codMercadoria 
+                        AND m.nego = p.codNegoPedido
+        JOIN associado a ON a.codAssociadoEvent = p.codAssocPedido 
+                        AND a.event = p.event
+        JOIN fornecedor f ON p.codFornPedido = f.codFornEvent 
+                        AND f.event = p.event
+        JOIN events e ON e.id = p.event
+    WHERE p.codAssocPedido = ?
+    GROUP BY 
+        p.event, 
+        e.id, 
+        e.descricao;`;
+
+    connection.query(query, [associado], (error, results, fields) => {
+      if (error) {
+        console.log("Error Select History: ", error);
+      } else {
+        return res.json(results);
+      }
+    });
+    // connection.end();
+  },
+
   async findValueEventsByFornecedor(req, res) {
     logger.info("Get History to Provider");
 
