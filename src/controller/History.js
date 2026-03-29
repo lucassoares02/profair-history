@@ -319,11 +319,20 @@ ORDER BY
     const query = `SET sql_mode = ''; SELECT
           a.codAssociadoEvent,
           a.razaoAssociado,
-          IFNULL(SUM(pedido.quantMercPedido), 0) as volumeTotal,
-          IFNULL(
-              SUM(mercadoria.precoMercadoria * pedido.quantMercPedido),
-              0
-          ) AS valorTotal
+          IFNULL(SUM(pedido.quantMercPedido), 0) AS volumeTotal,
+          IFNULL(SUM(mercadoria.precoMercadoria * pedido.quantMercPedido), 0) AS valorTotal,
+          IFNULL(SUM(
+              CASE 
+                  WHEN pedido.event = 1 THEN mercadoria.precoMercadoria * pedido.quantMercPedido
+                  ELSE 0
+              END
+          ), 0) AS valorEvento1,
+          IFNULL(SUM(
+              CASE 
+                  WHEN pedido.event = 2 THEN mercadoria.precoMercadoria * pedido.quantMercPedido
+                  ELSE 0
+              END
+          ), 0) AS valorEvento2
       FROM
           (
               SELECT codAssociadoEvent, razaoAssociado
@@ -334,9 +343,9 @@ ORDER BY
           JOIN mercadoria ON mercadoria.codMercadoria = pedido.codMercPedido
                         AND mercadoria.nego = pedido.codNegoPedido
           JOIN fornecedor f ON f.codFornEvent = pedido.codFornPedido
+                          AND f.event = pedido.event
       WHERE
           (? = 1 OR pedido.codFornPedido = ?)
-          AND pedido.event = f.event
       GROUP BY
           a.codAssociadoEvent,
           a.razaoAssociado
