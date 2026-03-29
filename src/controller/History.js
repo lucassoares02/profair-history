@@ -67,17 +67,13 @@ const History = {
         e.descricao,
         e.id
     FROM pedido p
-        JOIN mercadoria m ON p.codMercPedido = m.codMercadoria 
+        JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
                         AND m.nego = p.codNegoPedido
-        JOIN associado a ON a.codAssociadoEvent = p.codAssocPedido 
-                        AND a.event = p.event
-        JOIN fornecedor f ON p.codFornPedido = f.codFornEvent 
-                        AND f.event = p.event
         JOIN events e ON e.id = p.event
-    WHERE p.codAssocPedido = ?
+    WHERE 
+        p.codAssocPedido = ?
     GROUP BY 
-        p.event, 
-        e.id, 
+        e.id,
         e.descricao;`;
 
     connection.query(query, [associado], (error, results, fields) => {
