@@ -1,6 +1,9 @@
 const { connection } = require("@server");
 const logger = require("@logger");
 
+const IGNORE_FORNECEDOR_ID = 158;
+const getIgnoreFornecedorFlag = (fornecedor) => (Number(fornecedor) === IGNORE_FORNECEDOR_ID ? 1 : 0);
+
 const History = {
   async find(req, res) {
     logger.info("Get History to Client");
@@ -24,6 +27,7 @@ const History = {
     logger.info("Get History to Client");
 
     const { associado, fornecedor } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SELECT
         IFNULL(CAST(SUM(p.quantMercPedido * m.precoMercadoria) AS DOUBLE), 0) AS total,
@@ -38,14 +42,14 @@ const History = {
                         AND f.event = p.event
         JOIN events e ON e.id = p.event
     WHERE 
-        p.codFornPedido = ?
+        (? = 1 OR p.codFornPedido = ?)
         AND p.codAssocPedido = ?
     GROUP BY 
         p.event, 
         e.id, 
         e.descricao;`;
 
-    connection.query(query, [fornecedor, associado], (error, results, fields) => {
+    connection.query(query, [ignoreFornecedor, fornecedor, associado], (error, results, fields) => {
       if (error) {
         console.log("Error Select History: ", error);
       } else {
@@ -59,6 +63,7 @@ const History = {
     logger.info("Get History to Provider");
 
     const { fornecedor } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SELECT
         IFNULL(CAST(SUM(p.quantMercPedido * m.precoMercadoria) AS DOUBLE), 0) AS total,
@@ -71,13 +76,13 @@ const History = {
                         AND f.event = p.event
         JOIN events e ON e.id = p.event
     WHERE 
-        p.codFornPedido = ?
+        (? = 1 OR p.codFornPedido = ?)
     GROUP BY 
         p.event, 
         e.id, 
         e.descricao;`;
 
-    connection.query(query, [fornecedor], (error, results, fields) => {
+    connection.query(query, [ignoreFornecedor, fornecedor], (error, results, fields) => {
       if (error) {
         console.log("Error Select History: ", error);
       } else {
@@ -92,6 +97,7 @@ const History = {
     logger.info("Get Requests by Client");
 
     const { associado, fornecedor, evento } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SET sql_mode = ''; select pedido.codPedido , 
     associado.cnpjAssociado , 
@@ -114,14 +120,14 @@ const History = {
     join mercadoria on pedido.codMercPedido = mercadoria.codMercadoria 
     join events on events.id = pedido.event
     where pedido.codAssocPedido = ? 
-    and pedido.codFornPedido = ?
+    and (? = 1 OR pedido.codFornPedido = ?)
     and events.id = ?
     and consultor.event = events.id
     group by pedido.codNegoPedido
     order by horas 
     desc;`;
 
-    connection.query(query, [associado, fornecedor, evento], (error, results, fields) => {
+    connection.query(query, [associado, ignoreFornecedor, fornecedor, evento], (error, results, fields) => {
       if (error) {
         console.log("Error Select Request: ", error);
       } else {
@@ -136,6 +142,7 @@ const History = {
     logger.info("Get Details Requests by Client");
 
     const { associado, fornecedor, negociacao } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SET sql_mode = ''; SELECT
     mercadoria.codMercadoria,
@@ -158,7 +165,7 @@ const History = {
         JOIN pedido ON pedido.codMercPedido = mercadoria.codMercadoria
     WHERE
         pedido.codAssocPedido = ?
-        AND pedido.codfornpedido = ?
+        AND (? = 1 OR pedido.codfornpedido = ?)
         AND pedido.codNegoPedido = ?
     GROUP BY
         mercadoria.codMercadoria
@@ -167,7 +174,7 @@ const History = {
     ORDER BY
         quantMercPedido;`;
 
-    connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
+    connection.query(query, [associado, ignoreFornecedor, fornecedor, negociacao], (error, results, fields) => {
       if (error) {
         console.log("Error Select Details Request: ", error);
       } else {
@@ -182,6 +189,7 @@ const History = {
     logger.info("Get Details Requests by Client");
 
     const { fornecedor } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SET sql_mode = ''; SELECT
           a.codAssociadoEvent,
@@ -202,7 +210,7 @@ const History = {
                         AND mercadoria.nego = pedido.codNegoPedido
           JOIN fornecedor f ON f.codFornEvent = pedido.codFornPedido
       WHERE
-          pedido.codFornPedido = ${fornecedor}
+          (? = 1 OR pedido.codFornPedido = ?)
           AND pedido.event = f.event
       GROUP BY
           a.codAssociadoEvent,
@@ -212,7 +220,7 @@ const History = {
       ORDER BY
           valorTotal DESC;`;
 
-    connection.query(query, [fornecedor], (error, results, fields) => {
+    connection.query(query, [ignoreFornecedor, fornecedor], (error, results, fields) => {
       if (error) {
         console.log("Error Select Details Request: ", error);
       } else {
@@ -226,6 +234,7 @@ const History = {
     logger.info("Get Details Requests by Client");
 
     const { fornecedor, associado } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SET sql_mode = ''; SELECT 
     a.codAssociadoEvent, 
@@ -255,7 +264,7 @@ LEFT JOIN consultor comprador ON comprador.codConsultEvent = p.codComprPedido
 LEFT JOIN consultor vendedor ON vendedor.codConsultEvent = p.codConsultPedido
                              AND vendedor.event = p.event
 WHERE 
-    p.codFornPedido = ?
+    (? = 1 OR p.codFornPedido = ?)
     AND p.codAssocPedido = ?
 GROUP BY 
     a.codAssociadoEvent, 
@@ -273,7 +282,7 @@ ORDER BY
     e.id, 
     valorTotal DESC;`;
 
-    connection.query(query, [fornecedor, associado], (error, results, fields) => {
+    connection.query(query, [ignoreFornecedor, fornecedor, associado], (error, results, fields) => {
       if (error) {
         console.log("Error Select Details Request: ", error);
       } else {
@@ -287,6 +296,7 @@ ORDER BY
     logger.info("Get Details Requests by Negotiation");
 
     const { fornecedor, associado, negociacao } = req.params;
+    const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
 
     const query = `SET sql_mode = ''; SELECT 
       mercadoria.codMercadoria,
@@ -305,7 +315,7 @@ ORDER BY
           pedido ON pedido.codMercPedido = mercadoria.codMercadoria 
       WHERE 
           pedido.codAssocPedido = ?
-          AND pedido.codfornpedido = ?
+          AND (? = 1 OR pedido.codfornpedido = ?)
           AND pedido.codNegoPedido = ?
       GROUP BY 
           mercadoria.codMercadoria
@@ -314,7 +324,7 @@ ORDER BY
       ORDER BY 
           quantMercPedido;`;
 
-    connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
+    connection.query(query, [associado, ignoreFornecedor, fornecedor, negociacao], (error, results, fields) => {
       if (error) {
         console.log("Error Select Details Request: ", error);
       } else {
