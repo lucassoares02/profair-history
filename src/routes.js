@@ -18,4 +18,6 @@ router.get("/history/list/provider", History.findListProvider);
 router.get("/history/details/client/:fornecedor/:associado", History.findDetailsClientByProvider);
 router.get("/history/details/negotiation/:fornecedor/:associado/:negociacao", History.findDetailsNegotiationClientByProvider);
 
+router.post("/history/update/provider", History.updateProvider);
+
 module.exports = router;

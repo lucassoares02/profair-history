@@ -243,6 +243,7 @@ LEFT JOIN consultor vendedor ON vendedor.codConsultEvent = p.codConsultPedido
 WHERE 
     p.codFornPedido = ?
     AND p.codAssocPedido = ?
+    AND e.id = 1
 GROUP BY 
     a.codAssociadoEvent, 
     a.razaoAssociado,
@@ -457,6 +458,50 @@ ORDER BY
         return res.json(results[1]);
       }
     });
+    // connection.end();
+  },
+
+  async updateProvider(req, res) {
+    logger.info("Update Provider");
+
+    const { oldProvider, newProvider } = req.body;
+
+    const query = `START TRANSACTION;
+
+      UPDATE fornecedor 
+      SET codFornEvent = ? 
+      WHERE codFornEvent = ?;
+
+      UPDATE negociacao 
+      SET codFornNegociacao = ? 
+      WHERE codFornNegociacao = ?;
+
+      UPDATE pedido 
+      SET codFornPedido = ? 
+      WHERE codFornPedido = ?;
+
+      UPDATE mercadoria 
+      SET codFornMerc = ? 
+      WHERE codFornMerc = ?;
+      
+      UPDATE consultor 
+      SET codFornConsult = ? 
+      WHERE codFornConsult = ?;
+
+      COMMIT;`;
+
+    connection.query(
+      query,
+      [newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider],
+      (error, results, fields) => {
+        if (error) {
+          console.log("Error Update Provider: ", error);
+          return res.status(500).json({ message: "Error updating provider" });
+        } else {
+          return res.json({ message: "Provider updated successfully" });
+        }
+      },
+    );
     // connection.end();
   },
 };
