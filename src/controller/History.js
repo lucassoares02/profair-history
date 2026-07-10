@@ -424,32 +424,37 @@ ORDER BY
     const { fornecedor } = req.params;
 
     const query = `SET sql_mode = ''; SELECT
-        f.codFornEvent,
-        f.nomeForn,
-        f.event,
-        IFNULL(SUM(pedido.quantMercPedido), 0) AS volumeTotal,
-        IFNULL(
-            SUM(mercadoria.precoMercadoria * pedido.quantMercPedido),
-            0
-        ) AS valorTotal
-    FROM
-        (
-            SELECT codFornEvent, nomeForn, event
-            FROM fornecedor
-            GROUP BY codFornEvent, event
-        ) f
-        JOIN pedido ON pedido.codFornPedido = f.codFornEvent
-                  AND pedido.event = f.event
-        JOIN mercadoria ON mercadoria.codMercadoria = pedido.codMercPedido
-                      AND mercadoria.nego = pedido.codNegoPedido
-    GROUP BY
-        f.codFornEvent,
-        f.nomeForn
-    HAVING
-        valorTotal != 0
-    ORDER BY
-        f.event,
-        valorTotal DESC;`;
+      f.codFornEvent,
+      f.nomeForn,
+      f.event,
+      IFNULL(SUM(pedido.quantMercPedido), 0) AS volumeTotal,
+      IFNULL(
+          SUM(mercadoria.precoMercadoria * pedido.quantMercPedido),
+          0
+      ) AS valorTotal
+  FROM (
+      SELECT
+          codFornEvent,
+          MAX(nomeForn) AS nomeForn,
+          event
+      FROM fornecedor
+      GROUP BY codFornEvent, event
+  ) f
+  JOIN pedido
+      ON pedido.codFornPedido = f.codFornEvent
+     AND pedido.event = f.event
+  JOIN mercadoria
+      ON mercadoria.codMercadoria = pedido.codMercPedido
+     AND mercadoria.nego = pedido.codNegoPedido
+  GROUP BY
+      f.codFornEvent,
+      f.nomeForn,
+      f.event
+  HAVING
+      valorTotal != 0
+  ORDER BY
+      f.event,
+      valorTotal DESC;`;
 
     connection.query(query, [fornecedor], (error, results, fields) => {
       if (error) {
