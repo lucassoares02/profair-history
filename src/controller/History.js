@@ -3,6 +3,40 @@ const logger = require("@logger");
 
 const IGNORE_FORNECEDOR_ID = 158;
 const getIgnoreFornecedorFlag = (fornecedor) => (Number(fornecedor) === IGNORE_FORNECEDOR_ID ? 1 : 0);
+const queryAsync = (query, params = []) =>
+  new Promise((resolve, reject) => {
+    connection.query(query, params, (error, results) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(results);
+    });
+  });
+
+const getAvailableEventIds = async () => {
+  const results = await queryAsync("SELECT id FROM events ORDER BY id");
+
+  return results
+    .map((event) => Number(event.id))
+    .filter((eventId) => Number.isInteger(eventId) && eventId > 0);
+};
+
+const buildEventValueColumns = async ({ eventColumn, valueExpression }) => {
+  const eventIds = await getAvailableEventIds();
+
+  return eventIds
+    .map(
+      (eventId) => `IFNULL(SUM(
+              CASE 
+                  WHEN ${eventColumn} = ${eventId} THEN ${valueExpression}
+                  ELSE 0
+              END
+          ), 0) AS valorEvento${eventId}`,
+    )
+    .join(",\n          ");
+};
 
 const History = {
   async find(req, res) {
@@ -243,7 +277,6 @@ LEFT JOIN consultor vendedor ON vendedor.codConsultEvent = p.codConsultPedido
 WHERE 
     p.codFornPedido = ?
     AND p.codAssocPedido = ?
-    AND e.id = 1
 GROUP BY 
     a.codAssociadoEvent, 
     a.razaoAssociado,
@@ -316,24 +349,24 @@ ORDER BY
 
     const { fornecedor } = req.params;
     const ignoreFornecedor = getIgnoreFornecedorFlag(fornecedor);
+    let eventValueColumns = "";
+
+    try {
+      eventValueColumns = await buildEventValueColumns({
+        eventColumn: "pedido.event",
+        valueExpression: "mercadoria.precoMercadoria * pedido.quantMercPedido",
+      });
+    } catch (error) {
+      console.log("Error Select Events: ", error);
+      return res.status(500).json({ message: "Error selecting events" });
+    }
 
     const query = `SET sql_mode = ''; SELECT
           a.codAssociadoEvent,
           a.razaoAssociado,
           IFNULL(SUM(pedido.quantMercPedido), 0) AS volumeTotal,
-          IFNULL(SUM(mercadoria.precoMercadoria * pedido.quantMercPedido), 0) AS valorTotal,
-          IFNULL(SUM(
-              CASE 
-                  WHEN pedido.event = 1 THEN mercadoria.precoMercadoria * pedido.quantMercPedido
-                  ELSE 0
-              END
-          ), 0) AS valorEvento1,
-          IFNULL(SUM(
-              CASE 
-                  WHEN pedido.event = 2 THEN mercadoria.precoMercadoria * pedido.quantMercPedido
-                  ELSE 0
-              END
-          ), 0) AS valorEvento2
+          IFNULL(SUM(mercadoria.precoMercadoria * pedido.quantMercPedido), 0) AS valorTotal${eventValueColumns ? `,
+          ${eventValueColumns}` : ""}
       FROM
           (
               SELECT codAssociadoEvent, razaoAssociado
@@ -369,25 +402,24 @@ ORDER BY
     logger.info("Get Details Requests by Provider");
 
     const { associado } = req.params;
+    let eventValueColumns = "";
+
+    try {
+      eventValueColumns = await buildEventValueColumns({
+        eventColumn: "p.event",
+        valueExpression: "m.precoMercadoria * p.quantMercPedido",
+      });
+    } catch (error) {
+      console.log("Error Select Events: ", error);
+      return res.status(500).json({ message: "Error selecting events" });
+    }
 
     const query = `SET sql_mode = ''; SELECT
         f.codFornEvent,
         f.nomeForn,
         IFNULL(SUM(p.quantMercPedido), 0) AS volumeTotal,
-        IFNULL(SUM(m.precoMercadoria * p.quantMercPedido), 0) AS valorTotal,
-        IFNULL(SUM(
-            CASE 
-                WHEN p.event = 1 THEN m.precoMercadoria * p.quantMercPedido
-                ELSE 0
-            END
-        ), 0) AS valorEvento1,
-
-        IFNULL(SUM(
-            CASE 
-                WHEN p.event = 2 THEN m.precoMercadoria * p.quantMercPedido
-                ELSE 0
-            END
-        ), 0) AS valorEvento2
+        IFNULL(SUM(m.precoMercadoria * p.quantMercPedido), 0) AS valorTotal${eventValueColumns ? `,
+        ${eventValueColumns}` : ""}
 
     FROM fornecedor f
     JOIN pedido p 
