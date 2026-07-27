@@ -541,6 +541,106 @@ ORDER BY
     );
     // connection.end();
   },
+
+  // Totais negociados por associado (loja) em cada evento do histórico.
+  // Resposta: { events: [{id, descricao}], data: [{ idLoja, nome, cnpj, totais: { [eventId]: valor } }] }
+  async reportTotalsAssociados(req, res) {
+    logger.info("Get Report Totals by Associado (history)");
+    try {
+      const events = await queryAsync("SELECT id, descricao FROM events ORDER BY id");
+      const eventIds = events
+        .map((event) => Number(event.id))
+        .filter((eventId) => Number.isInteger(eventId) && eventId > 0);
+
+      const totalColumns = eventIds
+        .map(
+          (eventId) =>
+            `IFNULL(CAST(SUM(CASE WHEN p.event = ${eventId} THEN p.quantMercPedido * m.precoMercadoria ELSE 0 END) AS DOUBLE), 0) AS evento_${eventId}`,
+        )
+        .join(",\n          ");
+
+      const query = `SELECT
+          a.idLoja AS idLoja,
+          MAX(a.razaoAssociado) AS nome,
+          MAX(a.cnpjAssociado) AS cnpj,
+          ${totalColumns}
+      FROM pedido p
+          JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
+                          AND m.nego = p.codNegoPedido
+          JOIN associado a ON a.codAssociadoEvent = p.codAssocPedido
+                          AND a.event = p.event
+      GROUP BY a.idLoja
+      ORDER BY a.idLoja`;
+
+      const rows = await queryAsync(query);
+      const data = rows.map((row) => ({
+        idLoja: row.idLoja,
+        nome: row.nome,
+        cnpj: row.cnpj,
+        totais: eventIds.reduce((acc, eventId) => {
+          acc[eventId] = row[`evento_${eventId}`] || 0;
+          return acc;
+        }, {}),
+      }));
+
+      return res.json({
+        events: events.map((event) => ({ id: event.id, descricao: event.descricao })),
+        data,
+      });
+    } catch (error) {
+      logger.error(`Error report totals associados (history): ${error}`);
+      return res.status(500).json({ message: "Error report totals associados" });
+    }
+  },
+
+  // Totais negociados por fornecedor em cada evento do histórico.
+  // Fornecedor identificado pelo cnpjForn (consistente entre eventos).
+  async reportTotalsFornecedores(req, res) {
+    logger.info("Get Report Totals by Fornecedor (history)");
+    try {
+      const events = await queryAsync("SELECT id, descricao FROM events ORDER BY id");
+      const eventIds = events
+        .map((event) => Number(event.id))
+        .filter((eventId) => Number.isInteger(eventId) && eventId > 0);
+
+      const totalColumns = eventIds
+        .map(
+          (eventId) =>
+            `IFNULL(CAST(SUM(CASE WHEN p.event = ${eventId} THEN p.quantMercPedido * m.precoMercadoria ELSE 0 END) AS DOUBLE), 0) AS evento_${eventId}`,
+        )
+        .join(",\n          ");
+
+      const query = `SELECT
+          f.cnpjForn AS cnpj,
+          MAX(f.nomeForn) AS nome,
+          ${totalColumns}
+      FROM pedido p
+          JOIN mercadoria m ON m.codMercadoria = p.codMercPedido
+                          AND m.nego = p.codNegoPedido
+          JOIN fornecedor f ON f.codFornEvent = p.codFornPedido
+                          AND f.event = p.event
+      GROUP BY f.cnpjForn
+      ORDER BY f.cnpjForn`;
+
+      const rows = await queryAsync(query);
+      const data = rows.map((row) => ({
+        cnpj: row.cnpj,
+        nome: row.nome,
+        totais: eventIds.reduce((acc, eventId) => {
+          acc[eventId] = row[`evento_${eventId}`] || 0;
+          return acc;
+        }, {}),
+      }));
+
+      return res.json({
+        events: events.map((event) => ({ id: event.id, descricao: event.descricao })),
+        data,
+      });
+    } catch (error) {
+      logger.error(`Error report totals fornecedores (history): ${error}`);
+      return res.status(500).json({ message: "Error report totals fornecedores" });
+    }
+  },
 };
 
 module.exports = History;
