@@ -48,7 +48,8 @@ const History = {
 
     connection.query(query, [id], (error, results, fields) => {
       if (error) {
-        console.log("Error Select History: ", error);
+        logger.error(`Error Select History (history): ${error}`);
+        return res.status(500).json({ message: "Error select history" });
       } else {
         return res.json(results);
       }
@@ -83,7 +84,8 @@ const History = {
 
     connection.query(query, [fornecedor, associado], (error, results, fields) => {
       if (error) {
-        console.log("Error Select History: ", error);
+        logger.error(`Error Select History (history): ${error}`);
+        return res.status(500).json({ message: "Error select history" });
       } else {
         return res.json(results);
       }
@@ -112,7 +114,8 @@ const History = {
 
     connection.query(query, [associado], (error, results, fields) => {
       if (error) {
-        console.log("Error Select History: ", error);
+        logger.error(`Error Select History (history): ${error}`);
+        return res.status(500).json({ message: "Error select history" });
       } else {
         return res.json(results);
       }
@@ -146,7 +149,8 @@ const History = {
 
     connection.query(query, [ignoreFlag, fornecedor], (error, results, fields) => {
       if (error) {
-        console.log("Error Select History: ", error);
+        logger.error(`Error Select History (history): ${error}`);
+        return res.status(500).json({ message: "Error select history" });
       } else {
         return res.json(results);
       }
@@ -189,7 +193,8 @@ const History = {
 
     connection.query(query, [associado, fornecedor, evento], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Request: ", error);
+        logger.error(`Error Select Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select request" });
       } else {
         return res.json(results[1]);
       }
@@ -234,7 +239,8 @@ const History = {
 
     connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -295,7 +301,8 @@ ORDER BY
 
     connection.query(query, [fornecedor, associado], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -336,7 +343,8 @@ ORDER BY
 
     connection.query(query, [associado, fornecedor, negociacao], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -357,7 +365,7 @@ ORDER BY
         valueExpression: "mercadoria.precoMercadoria * pedido.quantMercPedido",
       });
     } catch (error) {
-      console.log("Error Select Events: ", error);
+      logger.error(`Error Select Events (history): ${error}`);
       return res.status(500).json({ message: "Error selecting events" });
     }
 
@@ -390,7 +398,8 @@ ORDER BY
 
     connection.query(query, [ignoreFornecedor, fornecedor], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -410,7 +419,7 @@ ORDER BY
         valueExpression: "m.precoMercadoria * p.quantMercPedido",
       });
     } catch (error) {
-      console.log("Error Select Events: ", error);
+      logger.error(`Error Select Events (history): ${error}`);
       return res.status(500).json({ message: "Error selecting events" });
     }
 
@@ -442,7 +451,8 @@ ORDER BY
 
     connection.query(query, [associado], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -490,7 +500,8 @@ ORDER BY
 
     connection.query(query, [fornecedor], (error, results, fields) => {
       if (error) {
-        console.log("Error Select Details Request: ", error);
+        logger.error(`Error Select Details Request (history): ${error}`);
+        return res.status(500).json({ message: "Error select details request" });
       } else {
         return res.json(results[1]);
       }
@@ -532,7 +543,7 @@ ORDER BY
       [newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider, newProvider, oldProvider],
       (error, results, fields) => {
         if (error) {
-          console.log("Error Update Provider: ", error);
+          logger.error(`Error Update Provider (history): ${error}`);
           return res.status(500).json({ message: "Error updating provider" });
         } else {
           return res.json({ message: "Provider updated successfully" });
